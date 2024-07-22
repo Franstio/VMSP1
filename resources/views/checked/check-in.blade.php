@@ -290,8 +290,8 @@ jQuery( document ).ready(function() {
          $("#qrCode").val("").focus();
          $("#statusB1").html("Scan wajah anda pada Thermal Camera untuk mengkonfirmasi");
          $("#statusA1").html("Visitor need to scan their face at the thermal camera to validating");
-         CHECK_CONFIRMATION();
-//         TIMEOUT = setTimeout(() => , 3600 * 1000);
+//         CHECK_CONFIRMATION();
+         TIMEOUT = setTimeout(() => TIMEOUT_FUNC(), 3600 * 1000);
         } else {
           step =1;
           Swal.fire({
@@ -331,7 +331,7 @@ jQuery( document ).ready(function() {
       }
       }).then(x=>{$("#qrCode").val("");});
     }
-    /*else if (step==2)
+    else if (step==2)
     {
         let val = qrCode;
         let payload = {nik:$("#nikStore").val(),id: $("#permitStore").val()};
@@ -380,7 +380,7 @@ jQuery( document ).ready(function() {
             }
           })
         }
-    }*/
+    }
   })
    function TIMEOUT_FUNC()
    {

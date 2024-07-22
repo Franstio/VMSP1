@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\BatchRecruitment;
 use App\Models\Permit;
 use Illuminate\Support\Facades\Auth;
 use App\Models\RecruitmentDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 class RecruitmentController extends Controller
 {
@@ -41,19 +45,19 @@ class RecruitmentController extends Controller
   
   
         $totalRecords = DB::select(
-           "SELECT COUNT(*) as count FROM recruitment_detail r inner join permit p on r.permitId=p.Id where getdate() between p.startDate and DATEADD(day,1,p.endDate) ",
+           "SELECT COUNT(*) as count FROM recruitment_detail r inner join permit p on r.permitId=p.Id inner join [user] host on p.host=host.username where getdate() between p.startDate and DATEADD(day,1,p.endDate) ",
 
         )[0]->count;
   
   
         $totalRecordswithFilter = DB::select(
-            "SELECT COUNT(*) as count FROM recruitment_detail r inner join permit p on r.permitId=p.Id where getdate() between p.startDate and DATEADD(day,1,p.endDate)  and r.name like ?",
+            "SELECT COUNT(*) as count FROM recruitment_detail r inner join permit p on r.permitId=p.Id inner join [user] host on p.host=host.username where getdate() between p.startDate and DATEADD(day,1,p.endDate)  and r.name like ?",
            ['%' . $searchValue . '%']
         )[0]->count;
   
         $sortFieldby = $columnName_arr2[$columnOrderIndex]['data'];
         $records = DB::select(
-           "select row_number() over (partition by permitId order by visitDate desc) as No,r.Name,r.Gender,r.VisitDate,r.permitId FROM recruitment_detail r inner join permit p on r.permitId=p.Id where getdate() between p.startDate and DATEADD(day,1,p.endDate)  and r.name like ? order by $sortFieldby $columnOrder OFFSET $start ROWS FETCH NEXT $rowperpage ROWS ONLY ",
+           "select row_number() over (partition by permitId order by visitDate desc) as No,r.Name,r.Gender,r.VisitDate,r.permitId,host.name as Host FROM recruitment_detail r inner join permit p on r.permitId=p.Id inner join [user] host on p.host=host.username where getdate() between p.startDate and DATEADD(day,1,p.endDate)  and r.name like ? order by $sortFieldby $columnOrder OFFSET $start ROWS FETCH NEXT $rowperpage ROWS ONLY ",
            ['%' . $searchValue . '%']
         );
   
@@ -99,9 +103,67 @@ class RecruitmentController extends Controller
             'photo'=> ''
         ];
         
-        DB::table('permit')->where('id', $permitRes->id)->update(['permitNo' => '']);
-        RecruitmentDetail::create($data);
         return redirect('/recruitment');
+    }
+    public function CreateBatch(Request $req)
+    {
+     
+        $req->validate([
+            'batchUpload' => 'required|mimes:xlsx,xls',
+        ]);
+        $batchUpload = $req->file('batchUpload');
+        $col = Excel::toCollection(new BatchRecruitment, $batchUpload);
+        $d = $col->get(0)->toArray();
+        if ($d==null)
+            return response('',403,[]);
+        array_splice($d,0,1);
+        $recId = uniqid();
+        $usr = Auth::user();
+        $host = $usr->username;
+
+        
+        foreach ($d as $k)
+        {
+            if ($k==null || $k[0] == null)
+                continue;
+            $permit = [
+                'subDate' => now()->format("Y-m-d"),
+                'supplyBarang' => '',
+                'nameVendor' => '',
+                'startDate' => Date::excelToDateTimeObject($k[2])->format('Y-m-d 00:00:00'),
+                'endDate' => Date::excelToDateTimeObject($k[2])->format('Y-m-d 23:59:59'),
+                'purpose' => 'Recruitment', 
+                'nameLocation' => '',
+                'permitNo' => str($recId),
+                'desk' => '',
+                'anggota' => "[".'{"Nama":"'.$k[0].'","Jabatan":"Recruitment","NIK":""}'."]",
+                'email' => '',
+                'name' => $d[0][0], 
+                'bawaBarang' => '',
+                'barangBawaan' => '',
+                'sign' => '',
+                'status' => '',
+                'uploadPermit' => '',
+                'permit_id' => '',
+                'host' => $host,
+            ];
+            Permit::create($permit);
+            $permitRes = Permit::where('permitNo','=',$recId)->first(); 
+            $data = [                
+                'permitId'=>$permitRes->id,
+                'name' => $k[0],
+                'gender'=> $k[1],
+                'visitDate'=> Date::excelToDateTimeObject($k[2])->format("Y-m-d"),
+                'photo'=> ''
+            ];
+            RecruitmentDetail::create($data);
+            DB::table('permit')->where('id', $permitRes->id)->update(['permitNo' => '']);
+        }
+        return response()->redirectTo("/recruitment");
+    }
+    public function DownloadSample(Request $req)
+    {
+        return Storage::download('Template_Recruitment.xlsx');
     }
     public function getRecruitment(Request $req)
     {

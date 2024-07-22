@@ -366,9 +366,10 @@ Route::get("/break",function(){
 
 Route::get('/recruitment',[RecruitmentController::class,'index']);
 Route::post('/recruitment',[RecruitmentController::class,'create']);
-
+Route::post('/recruitment/batch',[RecruitmentController::class,'CreateBatch'])->name('recruitment.batch');
 Route::delete('/recruitment',[RecruitmentController::class,'DeleteRecruitment']);
 Route::get('/recruitment/page',[RecruitmentController::class,'getPagination'])->name('recruitment.page');
+Route::get('/recruitment/sample',[RecruitmentController::class,'DownloadSample'])->name('recruitment.sample');
 Route::get('/recruitment-list',function (){
     return view('recruitment-list');
 });

@@ -85,15 +85,19 @@
                     </div>
                     <div class="card">
                         <div class="card-body">
-                            <input type="file" accept=".xlsx" class="form-control p-5" name="photoUpload"/>
+                            <form method="POST" enctype="multipart/form-data" action="{{route("recruitment.batch")}}">
+                            @csrf
+                            <input type="file"label="file upload" accept=".xlsx" class="form-control p-5" name="batchUpload"/>
                             <h6 class="card-subtitle mt-1    text-muted">Supported file: .xlsx</h6>
+                            <button class="btn btn-success text-white mt-3">Upload File</button>
+                            </form>
                         </div>
                     </div>
                     <div class="card">
                         <div class="card-body">
                             <div class="d-flex flex-row justify-content-between">
                                 <label class="col-form-label">XLSX Template: </label>
-                                <button class="btn w-75 btn-success text-white">Download Template .xlsx</button>
+                                <a class="btn w-75 btn-success text-white" href="{{route('recruitment.sample')}}">Download Template .xlsx</a>
                             </div>
                         </div>
                     </div>
