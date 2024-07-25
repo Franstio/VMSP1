@@ -11,6 +11,7 @@ use App\Models\Badge;
 use App\Models\Transaksi;
 use Carbon\Carbon;
 use DB;
+use Auth;
 use Illuminate\Support\Facades\App;
 
 class PermitVIPController extends Controller
@@ -139,5 +140,59 @@ class PermitVIPController extends Controller
         // $data->postdate=date('Y-m-d H:i:s');
         $data->save();
         return response()->json(['success' => true, 'result' => 'Update Successfully']);
+    }
+
+    public function getListPermit(Request $req)
+    {
+        $user = Auth::user();
+        $empID = $user->empID;
+       
+        ## Read value
+        $draw = $req->draw;
+        $start = $req->start;
+        $rowperpage = $req->length; // Rows display per page
+  
+        $columnIndex_arr = $req->order;
+        $columnName_arr = $req->columns;
+        $columnName_arr2 = json_decode($columnName_arr, true);
+        $search_arr = $req->search;
+  
+        $columnOrderIndex = $columnIndex_arr[0]['column']; // Column index
+        $columnOrder = $columnIndex_arr[0]['dir']; // Column index
+  
+        $searchValue = $search_arr['value']; // Search value
+  
+  
+        $totalRecords = DB::select(
+           "SELECT COUNT(*) as count FROM permitvip p left join transaksi t on (t.permitID=p.id_permit and (( t.timeCheckIn is null or t.timeCheckout is null ) or (t.timeCheckIn between cast(format(getDate(),'yyyy-MM-dd 00:00:00') as datetime) and cast(format(getDate(),'yyyy-MM-dd 23:59:59') as datetime)  )) ) where getdate() between p.startDate  and DATEADD(day,1,p.endDate) and (kondisi is null or kondisi='checkin'); ",
+
+        )[0]->count;
+  
+  
+        $totalRecordswithFilter = DB::select(
+            "SELECT COUNT(*) as count FROM permitvip p left join transaksi t on (t.permitID=p.id_permit and (( t.timeCheckIn is null or t.timeCheckout is null ) or (t.timeCheckIn between cast(format(getDate(),'yyyy-MM-dd 00:00:00') as datetime) and cast(format(getDate(),'yyyy-MM-dd 23:59:59') as datetime)  )) ) where    getdate() between p.startDate and DATEADD(day,1,p.endDate) and (kondisi is null or kondisi='checkin') and  (p.namaVisitor like ? or p.name like ?)",
+           ['%' . $searchValue . '%','%'.$searchValue.'%']
+        )[0]->count;
+  
+        $sortFieldby = $columnName_arr2[$columnOrderIndex]['data'];
+        $records = DB::select(
+           "select p.nameVendor,p.namaVisitor,p.Nik,p.purpose,p.nameLocation,p.name,id_permit,t.kondisi,t.id from permitvip p left join transaksi t on (t.permitID=p.id_permit and (( t.timeCheckIn is null or t.timeCheckout is null ) or (t.timeCheckIn between cast(format(getDate(),'yyyy-MM-dd 00:00:00') as datetime) and cast(format(getDate(),'yyyy-MM-dd 23:59:59') as datetime))  ) ) where  getdate() between p.startDate and DATEADD(day,1,p.endDate) and (kondisi is null or kondisi='checkin')  and ( p.name like ? or p.namaVisitor like ?)  order by $sortFieldby $columnOrder OFFSET $start ROWS FETCH NEXT $rowperpage ROWS ONLY ",
+           ['%' . $searchValue . '%','%'.$searchValue.'%']
+        );
+  
+  
+        // Update records expired
+//         $recordUpdate =DB::table('permit')->where('status', 'waitinghost') ->where('endDate','<',getdate())  ->update(['status' => 'expired']);
+        return response()->json(['draw' => $draw, 'recordsTotal' => $totalRecords, 'recordsFiltered' => $totalRecordswithFilter, 'data' => $records]);
+    }
+    public function CheckIN(Request $req)
+    {
+        DB::insert("Insert into transaksi(namaVisitor,NIK,purpose,nameVendor,name,temp,timeCheckin,timeCheckout,statusPermit,noVest,zone,nameLocation,kondisi,photo,permitID,barangBawaan,postby,reason) select p.namaVisitor,p.Nik,p.purpose,p.nameVendor,concat(hst.name,':',hst.empID),null,getdate(),null,p.status,123,'',p.nameLocation,'checkin',null,p.id_permit,'',hst.id,''  From PermitVip p inner join [user] hst on p.name=hst.name where p.id_permit=? order by p.id_permit offset 0 rows fetch next 1 rows only",[$req->id_permit]);
+        return response()->json(["msg"=>"ok"]);
+    }
+    public function CheckOUT(Request $data)
+    {
+        DB::update("Update transaksi set  kondisi='checkout',timeCheckout=getdate() where permitId=? and id=?",[$data->id_permit,$data->id]);
+        return response()->json(["msg"=>"ok"]);
     }
 }

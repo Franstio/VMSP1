@@ -3,7 +3,7 @@
     <main id="main" class="main">
         <section class="section dashboard">
             <div class="d-sm-flex align-items-center justify-content-between">
-                <h4 class="mt-5 mb-2 text-gray-800"><strong>Recruitment List</strong></h4>
+                <h4 class="mt-5 mb-2 text-gray-800"><strong>VIP Waiting List</strong></h4>
             </div>
 
             <div class="col-md-12">
@@ -29,11 +29,12 @@
                                         <table id="table_waiting" class="display" style="width:100%">
                                             <thead class="bg-light">
                                                 <tr>
-                                                    <th></th>
-                                                    <th>Candidate Name</th>
-                                                    <th>Gender</th>
+                                                    <th>Company Name</th>
+                                                    <th>Visitor Name</th>
+                                                    <th>ID Number</th>
+                                                    <th>Purpose</th>
+                                                    <th>Location</th>
                                                     <th>Host</th>
-                                                    <th>Date Visit</th>
                                                     <th></th>
                                                 </tr>
                                             </thead>
@@ -275,7 +276,7 @@
                     function actionCheck(x)
                     {
                         let data = {
-                            permitId: $(x).attr('permit'),
+                            id_permit: $(x).attr('permit'),
                             id: $(x).attr("transaksi"),
                             kondisi: $(x).attr("status")
                         };
@@ -285,7 +286,7 @@
                                 'X-CSRF-TOKEN': jQuery('meta[name="csrf-token"]').attr('content')
                             },
                             method:"POST",
-                            url: "/recruitment/" + (data.kondisi=='checkin' ? 'check-out' : 'check-in'),
+                            url: "/vip-list/" + (data.kondisi=='checkin' ? 'check-out' : 'check-in'),
                             success: function(){
                                 window.location.reload();   
                             }
@@ -385,7 +386,7 @@
                         pageLength: 15,
                         serverSide: true,
                         "ajax": {
-                            "url": "/recruitment-list/data", //API
+                            "url": "/vip-list/data", //API
                             "type": "GET",
                             "dataType": "json",
                             //"data":data
@@ -409,33 +410,33 @@
                               },
                             },*/
                             {
-                                data: "No"
+                                data: 'nameVendor'
                             },
                             {
-                                data: 'Name'
+                                data: 'namaVisitor'
                             },
                             {
-                                data: 'Gender'
+                                data: 'Nik'
+                            },
+                            {
+                                data: 'purpose'
+                            },
+                            {
+                                data: 'nameLocation'
                             },
                             {
                                 data: 'Host',
                                 render: function(data) {
-                                    return data?.split(':')[0] ?? "-";
-                                }
-                            },
-                            {
-                                data: 'VisitDate',
-                                render: function(data) {
-                                    return new Date(data).toDateString();
+                                    return data ?? "-";
                                 }
                             },
                             {
                                 data: 'kondisi',
                                 render: function(data, type, row) {
-                                    if (row.kondisi == 'checkin') {
-                                        return '<button class="transaksi_button" onclick="actionCheck(this)" transaksi="'+row.id+'" status="'+row.kondisi+'" permit="'+row.permitId+'"><i  class="bi bi-arrow-left-square text-red">&nbsp;&nbsp;CHECKED-OUT</i></button>';
+                                    if (row.kondisi == 'Checkin' || row.kondisi == 'checkin') {
+                                        return '<button class="transaksi_button" onclick="actionCheck(this)" transaksi="'+row.id+'" status="'+row.kondisi+'" permit="'+row.id_permit+'"><i  class="bi bi-arrow-left-square text-red">&nbsp;&nbsp;CHECKED-OUT</i></button>';
                                     } else {
-                                        return '<button class="transaksi_button" onclick="actionCheck(this)" transaksi="'+row.id+'" status="'+row.kondisi+'" permit="'+row.permitId+'"> <i class="bi bi-arrow-right-square text-blue">&nbsp;&nbsp;CHECKED-IN</i></button>';
+                                        return '<button class="transaksi_button" onclick="actionCheck(this)" transaksi="'+row.id+'" status="'+row.kondisi+'" permit="'+row.id_permit+'"> <i class="bi bi-arrow-right-square text-blue">&nbsp;&nbsp;CHECKED-IN</i></button>';
                                     }
 
                                     return data;

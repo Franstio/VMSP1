@@ -14,6 +14,7 @@
         <a href="/reject" class="btn btn-secondary">Reject List</a>
         <a href="/vipcheckin" class="btn btn-secondary">VIP Check-in</a>
         <a href="/vipcheckout" class="btn btn-secondary">VIP Check-out</a>
+        <a href="/vip-list" class="btn btn-secondary">VIP List</a>
         <a href="/recruitment-list" class="btn btn-secondary">Recruitment List</a>
         </div>
       </div>

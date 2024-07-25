@@ -190,7 +190,6 @@ Route::get('/vipcheckin/data', [PermitvipController::class,'index']);
 Route::get('/vipcheckin/show/{id_permit}', [PermitvipController::class,'show']);
 Route::put('/vipcheckin/store', [PermitvipController::class,'store']);
 Route::post('/vipcheckin/updatestatus', [PermitvipController::class,'updateStatusById']);
-
 Route::get('/vipcheckout', function () {
     return view('vipcheckout', ["title" => "Permit",]);
 });
@@ -367,6 +366,8 @@ Route::get("/break",function(){
 Route::get('/recruitment',[RecruitmentController::class,'index']);
 Route::post('/recruitment',[RecruitmentController::class,'create']);
 Route::post('/recruitment/batch',[RecruitmentController::class,'CreateBatch'])->name('recruitment.batch');
+Route::post('/recruitment/check-in',[RecruitmentController::class,'CheckIN']);
+Route::post('/recruitment/check-out',[RecruitmentController::class,'CheckOUT']);
 Route::delete('/recruitment',[RecruitmentController::class,'DeleteRecruitment']);
 Route::get('/recruitment/page',[RecruitmentController::class,'getPagination'])->name('recruitment.page');
 Route::get('/recruitment/sample',[RecruitmentController::class,'DownloadSample'])->name('recruitment.sample');
@@ -380,3 +381,10 @@ Route::get('/escorting-in',[EscortController::class,'index']);
 Route::get('/artemis/user/{nik}',[EkioskController::class,'AddArtemisUser']);
 Route::get('/artemis/reset',[EkioskController::class,'ResetArtemis']);*/
 Route::post('/artemis/confirm',[EkioskController::class,'ConfirmArtemisData']);
+
+Route::get('/vip-list/data',[PermitvipController::class,'getListPermit'])->name('vip.data');
+Route::get('/vip-list',function(){
+    return view('vip-list');
+});
+Route::post('/vip-list/check-in',[PermitvipController::class,'CheckIN']);
+Route::post('/vip-list/check-out',[PermitvipController::class,'CheckOUT']);

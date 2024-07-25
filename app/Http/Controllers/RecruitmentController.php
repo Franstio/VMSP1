@@ -165,6 +165,16 @@ class RecruitmentController extends Controller
     {
         return Storage::download('Template_Recruitment.xlsx');
     }
+    public function CheckIN(Request $req)
+    {
+        DB::insert("Insert into transaksi(namaVisitor,NIK,purpose,nameVendor,name,temp,timeCheckin,timeCheckout,statusPermit,noVest,zone,nameLocation,kondisi,photo,permitID,barangBawaan,postby,reason) select rd.name,'',p.purpose,p.nameVendor,concat(hst.name,':',hst.empID),'37',getdate(),null,p.status,123,'',p.nameLocation,'checkin',null,p.id,p.barangBawaan,p.postby,p.reason  From Permit p  inner join recruitment_detail rd on p.id=rd.permitId inner join [user] hst on p.host=hst.username  where p.id=? order by p.id offset 0 rows fetch next 1 rows only",[$req->permitId]);
+        return response()->json(["msg"=>"ok"]);
+    }
+    public function CheckOUT(Request $data)
+    {
+        DB::update("Update transaksi set  kondisi='checkout',timeCheckout=getdate() where permitId=? and id=?",[$data->permitId,$data->id]);
+        return response()->json(["msg"=>"ok"]);
+    }
     public function getRecruitment(Request $req)
     {
         
@@ -188,19 +198,19 @@ class RecruitmentController extends Controller
   
   
         $totalRecords = DB::select(
-           "SELECT COUNT(*) as count FROM recruitment_detail r inner join permit p on r.permitId=p.Id left join transaksi t on t.permitID=p.id where getdate() between p.startDate and DATEADD(day,1,p.endDate) ",
+           "SELECT COUNT(*) as count FROM recruitment_detail r inner join permit p on r.permitId=p.Id left join transaksi t on t.permitID=p.id where getdate() between p.startDate  and DATEADD(day,1,p.endDate) and  (kondisi is null or kondisi='checkin'); ",
 
         )[0]->count;
   
   
         $totalRecordswithFilter = DB::select(
-            "SELECT COUNT(*) as count FROM recruitment_detail r inner join permit p on r.permitId=p.Id left join transaksi t on t.permitId=p.id where    getdate() between p.startDate and DATEADD(day,1,p.endDate)  and r.name like ?",
+            "SELECT COUNT(*) as count FROM recruitment_detail r inner join permit p on r.permitId=p.Id left join transaksi t on t.permitId=p.id  where    getdate() between p.startDate and DATEADD(day,1,p.endDate) and (kondisi is null or kondisi='checkin')  and r.name like ?",
            ['%' . $searchValue . '%']
         )[0]->count;
   
         $sortFieldby = $columnName_arr2[$columnOrderIndex]['data'];
         $records = DB::select(
-           "select row_number() over (partition by r.permitId order by visitDate desc) as No,r.Name,r.Gender,t.name as Host,r.VisitDate,r.permitId,t.id,t.kondisi FROM recruitment_detail r inner join permit p on r.permitId=p.Id left join transaksi t on t.permitId=p.id where  getdate() between p.startDate and DATEADD(day,1,p.endDate)  and r.name like ? order by $sortFieldby $columnOrder OFFSET $start ROWS FETCH NEXT $rowperpage ROWS ONLY ",
+           "select row_number() over (partition by r.permitId order by visitDate desc) as No,r.Name,r.Gender,host.name as Host,r.VisitDate,r.permitId,t.id,t.kondisi FROM recruitment_detail r inner join permit p on r.permitId=p.Id left join transaksi t on t.permitId=p.id left join [user] host on p.host=host.username where  getdate() between p.startDate and DATEADD(day,1,p.endDate) and (kondisi is null or kondisi='checkin')  and r.name like ? order by $sortFieldby $columnOrder OFFSET $start ROWS FETCH NEXT $rowperpage ROWS ONLY ",
            ['%' . $searchValue . '%']
         );
   
